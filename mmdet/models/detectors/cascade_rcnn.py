@@ -31,4 +31,4 @@ class CascadeRCNN(TwoStageDetector):
         else:
             if isinstance(result, dict):
                 result = result['ensemble']
-        return super(CascadeRCNN, self).show_result(data, result, **kwargs)
+        super(CascadeRCNN, self).show_result(data, result, **kwargs)
