@@ -74,7 +74,6 @@ Results and models are available in the [model zoo](docs/model_zoo.md).
 | ATSS               | ✓        | ✓        | ☐        | ✗        | ✓     | ☐        | ☐     |
 | FSAF               | ✓        | ✓        | ☐        | ✗        | ✓     | ☐        | ☐     |
 | PAFPN              | ✓        | ✓        | ☐        | ✗        | ✓     | ☐        | ☐     |
-| NAS-FCOS           | ✓        | ✓        | ☐        | ✗        | ✓     | ☐        | ☐     |
 | PISA               | ✓        | ✓        | ☐        | ✗        | ✓     | ☐        | ☐     |
 
 Other features
