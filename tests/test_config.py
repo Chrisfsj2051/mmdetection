@@ -142,7 +142,6 @@ def test_config_data_pipeline():
                                                     True) else 'polygon'
         results = dict(
             filename='test_img.png',
-            ori_filename='test_img.png',
             img=img,
             img_shape=img.shape,
             ori_shape=img.shape,
@@ -158,7 +157,6 @@ def test_config_data_pipeline():
         print(f'Test testing data pipeline: \n{test_pipeline!r}')
         results = dict(
             filename='test_img.png',
-            ori_filename='test_img.png',
             img=img,
             img_shape=img.shape,
             ori_shape=img.shape,
@@ -176,7 +174,6 @@ def test_config_data_pipeline():
               f'\n{train_pipeline!r}')
         results = dict(
             filename='test_img.png',
-            ori_filename='test_img.png',
             img=img,
             img_shape=img.shape,
             ori_shape=img.shape,
@@ -193,7 +190,6 @@ def test_config_data_pipeline():
         print(f'Test empty GT with testing data pipeline: \n{test_pipeline!r}')
         results = dict(
             filename='test_img.png',
-            ori_filename='test_img.png',
             img=img,
             img_shape=img.shape,
             ori_shape=img.shape,

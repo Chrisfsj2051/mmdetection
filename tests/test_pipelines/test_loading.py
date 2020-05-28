@@ -19,7 +19,6 @@ class TestLoading(object):
         transform = LoadImageFromFile()
         results = transform(copy.deepcopy(results))
         assert results['filename'] == osp.join(self.data_prefix, 'color.jpg')
-        assert results['ori_filename'] == 'color.jpg'
         assert results['img'].shape == (288, 512, 3)
         assert results['img'].dtype == np.uint8
         assert results['img_shape'] == (288, 512, 3)
@@ -37,7 +36,6 @@ class TestLoading(object):
         transform = LoadImageFromFile()
         results = transform(copy.deepcopy(results))
         assert results['filename'] == 'tests/data/color.jpg'
-        assert results['ori_filename'] == 'tests/data/color.jpg'
         assert results['img'].shape == (288, 512, 3)
 
         # to_float32
@@ -70,7 +68,6 @@ class TestLoading(object):
             osp.join(self.data_prefix, 'color.jpg'),
             osp.join(self.data_prefix, 'color.jpg')
         ]
-        assert results['ori_filename'] == ['color.jpg', 'color.jpg']
         assert results['img'].shape == (288, 512, 3, 2)
         assert results['img'].dtype == np.uint8
         assert results['img_shape'] == (288, 512, 3, 2)
