@@ -1,9 +1,8 @@
 dataset_type = 'Laryngoscopy'
 data_root = 'data/laryngoscopy/'
+
 img_norm_cfg = dict(
     mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.375], to_rgb=True)
-
-fold_idx = 5
 
 train_pipeline = [
     dict(type='LoadImageFromFile'),
@@ -36,29 +35,18 @@ data = dict(
     samples_per_gpu=2,
     workers_per_gpu=2,
     train=dict(
-        # type='Laryngoscopy',
-        # ann_file=data_root + f'medical_train_fold{fold_idx}.json',
-        # img_prefix=data_root,
-        # pipeline=train_pipeline
-        type='ClassBalancedDataset',
-        filter_empty_gt=False,
-        oversample_thr=0.5,
-        dataset=dict(
-            type='Laryngoscopy',
-            ann_file=data_root + f'medical_train_fold{fold_idx}.json',
-            img_prefix=data_root,
-            pipeline=train_pipeline
-        )
+        type='Laryngoscopy',
+        class_equal=True,
+        img_prefix=data_root + '/image',
+        pipeline=train_pipeline
     ),
     val=dict(
         type=dataset_type,
-        ann_file=data_root + f'medical_test_fold{fold_idx}.json',
-        img_prefix=data_root,
+        img_prefix=data_root + '/image',
         pipeline=test_pipeline),
     test=dict(
         type=dataset_type,
-        ann_file=data_root + f'medical_test_fold{fold_idx}.json',
-        img_prefix=data_root,
+        img_prefix=data_root + '/image',
         pipeline=test_pipeline))
 
 evaluation = dict(interval=1, metric='recall')

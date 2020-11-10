@@ -40,4 +40,3 @@ data = dict(
 
 lr_config = dict(step=[16, 22])
 total_epochs = 24
-

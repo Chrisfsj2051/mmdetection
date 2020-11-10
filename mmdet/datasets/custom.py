@@ -103,7 +103,7 @@ class CustomDataset(Dataset):
 
     def __len__(self):
         """Total number of samples of data."""
-        return len(self.data_infos)
+        return min(len(self.data_infos), 20000000)
 
     def load_annotations(self, ann_file):
         """Load annotation from annotation file."""
