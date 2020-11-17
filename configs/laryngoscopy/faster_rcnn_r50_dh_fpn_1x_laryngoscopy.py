@@ -1,5 +1,7 @@
 _base_ = 'faster_rcnn_r50_fpn_1x_laryngoscopy.py'
 
+work_dir = f'./laryngoscopy_output/faster_rcnn_r50_dh_fpn_1x_laryngoscopy/fold1'
+
 model = dict(
     roi_head=dict(
         type='DoubleHeadRoIHead',

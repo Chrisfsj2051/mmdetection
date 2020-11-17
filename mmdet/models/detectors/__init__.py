@@ -22,11 +22,12 @@ from .single_stage import SingleStageDetector
 from .two_stage import TwoStageDetector
 from .yolact import YOLACT
 from .yolo import YOLOV3
+from .laryngoscopy_faster_rcnn import LaryngoscopyFasterRCNN
 
 __all__ = [
     'ATSS', 'BaseDetector', 'SingleStageDetector', 'TwoStageDetector', 'RPN',
     'FastRCNN', 'FasterRCNN', 'MaskRCNN', 'CascadeRCNN', 'HybridTaskCascade',
     'RetinaNet', 'FCOS', 'GridRCNN', 'MaskScoringRCNN', 'RepPointsDetector',
     'FOVEA', 'FSAF', 'NASFCOS', 'PointRend', 'GFL', 'CornerNet', 'PAA',
-    'YOLOV3', 'YOLACT'
+    'YOLOV3', 'YOLACT', 'LaryngoscopyFasterRCNN'
 ]

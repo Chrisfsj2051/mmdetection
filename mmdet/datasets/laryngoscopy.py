@@ -6,6 +6,7 @@ from mmdet.core import eval_map
 from mmdet.utils import get_root_logger
 import time
 import random
+import torch
 
 
 @DATASETS.register_module()
@@ -127,7 +128,7 @@ class Laryngoscopy(CustomDataset):
             for (i, (gt_bbox, gt_label, test_result)) in \
                     enumerate(zip(gt_bboxes, gt_labels, results)):
                 cm, pred_res = self.calculate_confusion_matrix(
-                    gt_label, test_result, image_info[i])
+                    gt_bbox, gt_label, test_result, image_info[i])
                 confusion_matrixs += cm
                 pred_result.append(pred_res)
 
@@ -182,7 +183,7 @@ class Laryngoscopy(CustomDataset):
                 # f'AR-best': self.best_AR,
                 f'Ave-best': self.best_Ave, }
 
-    def calculate_confusion_matrix(self, gt_labels, test_results, image_info):
+    def calculate_confusion_matrix(self, gt_bbox, gt_labels, test_results, image_info):
         total_class_num = len(self.CLASSES)
         bg_inds = total_class_num - 1
         pred_bboxes = []
@@ -203,15 +204,29 @@ class Laryngoscopy(CustomDataset):
             pred_bboxes = np.empty(shape=(0, total_class_num))
 
         gt_label = gt_labels[0] if len(gt_labels) else bg_inds
-        pred_result = dict(
-            pred_score=pred_bboxes[0][4],
-            gt_label=gt_label,
-            filename=image_info['filename']
-        )
+        # gt_bbox = gt_bbox if
         pred_label = (bg_inds
                       if pred_bboxes[0][4] < self.normal_thr
                       else int(pred_bboxes[0][5]))
-        pred_result['pred_label'] = pred_label
+        pred_result = dict(
+            gt_label=gt_label,
+            filename=image_info['filename'],
+            score=[],
+            pred_label=pred_label,
+            pred_bbox=pred_bboxes[0] if len(pred_bboxes) else pred_bboxes,
+            gt_bbox=gt_bbox if gt_label != bg_inds else np.empty(shape=(0, 4))
+        )
+        for _ in range(4):
+            pred_result['score'].append(
+                max([0]+[pred_bbox[-2] for pred_bbox in pred_bboxes
+                     if int(pred_bbox[-1]) == _])
+            )
+        pred_result['score'].append(1 - max(pred_result['score']))
+        pred_result['score'] = torch.softmax(torch.Tensor(pred_result['score']), 0)
+        pred_result['score'] = pred_result['score'].tolist()
         confusion_matrix[gt_label, pred_label] += 1
-
         return confusion_matrix, pred_result
+
+    def __len__(self):
+        """Total number of samples of data."""
+        return len(self.data_infos)

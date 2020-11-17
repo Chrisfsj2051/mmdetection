@@ -1,6 +1,6 @@
 _base_ = 'faster_rcnn_r50_fpn_1x_laryngoscopy.py'
 
-work_dir = f'./laryngoscopy_output/faster_rcnn_r50_pafpn_1x_laryngoscopy/fold1'
+work_dir = f'./laryngoscopy_output/faster_rcnn_r50_pafpn_3x_laryngoscopy/fold1'
 
 model = dict(
     neck=dict(
@@ -10,3 +10,6 @@ model = dict(
         num_outs=5
     )
 )
+
+lr_config = dict(step=[24, 33])
+total_epochs = 36
