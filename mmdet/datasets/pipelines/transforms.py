@@ -1,3 +1,4 @@
+import copy
 import inspect
 
 import mmcv
@@ -19,6 +20,19 @@ try:
 except ImportError:
     albumentations = None
     Compose = None
+
+try:
+    import imgaug.augmenters as iaa
+    from imgaug.augmenters.geometric import Affine
+    from imgaug.augmenters.pillike import (Autocontrast, EnhanceBrightness,
+                                           EnhanceColor, EnhanceContrast,
+                                           EnhanceSharpness, Equalize,
+                                           Posterize, Solarize)
+except ImportError:
+    iaa = None
+
+PI = np.pi
+
 
 
 @PIPELINES.register_module()
@@ -1678,3 +1692,139 @@ class CutOut(object):
                      else f'cutout_shape={self.candidates}, ')
         repr_str += f'fill_in={self.fill_in})'
         return repr_str
+
+@PIPELINES.register_module()
+class MMDETRandomAugmentBBox(object):
+    """Augmentation used in `STAC <https://arxiv.org/abs/2005.04757>`_
+
+    It includes:
+
+        1. Color Transformation (i.e. Identity, Contrast, Brightness,
+           Sharpness, Color, Posterize, Equalize, Autocontrast).
+        2. Global Geometric Transformation (i.e. Translate, Shear,
+           Rotate).
+        3. Bbox-level Geometric Transformation, which is similar to
+           Global Geometric Transformation but with a samller magnitude.
+        4. Cutout.
+
+    Args:
+        with_warning (bool): whether to print warning information when
+            there's no valid bbox after augmented. Default to True.
+
+    """
+
+    def __init__(self, with_warning=True):
+        if iaa is None:
+            raise ImportError('imgaug>=0.4.0 is required.')
+        self.with_warning = with_warning
+        self.COLOR_TRANSFORM = iaa.Sequential([
+            iaa.OneOf([
+                iaa.Add((0, 0)),
+                EnhanceContrast(factor=(0.1, 1.9)),
+                EnhanceBrightness(factor=(0.1, 1.9)),
+                EnhanceSharpness(factor=(0.1, 1.9)),
+                EnhanceColor(factor=(0.1, 1.9)),
+                Solarize(threshold=(256 // 10, 256 // 10 * 9)),
+                Posterize(nb_bits=(1, 4)),
+                Equalize(),
+                Autocontrast(cutoff=(1, 9))
+            ])
+        ],
+                                              random_order=True)
+
+        # global transformation
+        self.AFFINE_TRANSFORM = iaa.Sequential([
+            iaa.OneOf([
+                Affine(
+                    translate_percent={'x': (-0.1, 0.1)},
+                    order=[0, 1],
+                    cval=125),
+                Affine(
+                    translate_percent={'y': (-0.1, 0.1)},
+                    order=[0, 1],
+                    cval=125),
+                Affine(rotate=(-30, 30), order=[0, 1], cval=125),
+                Affine(shear=(-30, 30), order=[0, 1], cval=125)
+            ])
+        ],
+                                               random_order=True)
+
+        # bbox transformation
+        self.AFFINE_TRANSFORM_WEAK = iaa.Sequential([
+            iaa.OneOf([
+                Affine(
+                    translate_percent={'x': (-0.05, 0.05)},
+                    order=[0, 1],
+                    cval=125),
+                Affine(
+                    translate_percent={'y': (-0.05, 0.05)},
+                    order=[0, 1],
+                    cval=125),
+                Affine(rotate=(-10, 10), order=[0, 1], cval=125),
+                Affine(shear=(-10, 10), order=[0, 1], cval=125),
+            ])
+        ],
+                                                    random_order=True)
+
+        self.CUTOUT = iaa.Cutout(
+            nb_iterations=(1, 5), size=[0, 0.2], squared=True)
+
+    def __call__(self, results):
+        """
+        1. choose one operation from COLOR_TRANSFORM
+        2. choose one operation from {AFFINE_TRANSFORM+AFFINE_TRANSFORM_WEAK}
+        3. Cutout operation
+        """  # noqa W501
+        dtype = results['img'].dtype
+        img = results['img'].astype(np.uint8)
+        img = self.COLOR_TRANSFORM(image=img)
+        img = self.CUTOUT(image=img)
+        img_bkup = copy.deepcopy(img)
+        bbox_bkup = copy.deepcopy(results['gt_bboxes'])
+        results['gt_bboxes_ignore'] = np.empty(shape=(0, 4))
+        bbox_ignore_bkup = copy.deepcopy(results['gt_bboxes_ignore'])
+
+        try:
+            affine_on_image = np.random.rand() > 0.5
+            if affine_on_image:  # global transform
+                bbox = np.concatenate(
+                    [results['gt_bboxes'], results['gt_bboxes_ignore']])
+                img, bbox = self.AFFINE_TRANSFORM(
+                    image=img, bounding_boxes=bbox[None])
+                results['gt_bboxes'] = bbox[0][:results['gt_bboxes'].shape[0]]
+                results['gt_bboxes_ignore'] = bbox[0][results['gt_bboxes'].
+                                                      shape[0]:]
+            else:
+                for bbox in results['gt_bboxes']:
+                    (x1, y1, x2, y2) = bbox.astype(np.int)
+                    img[y1:y2, x1:x2, :] = self.AFFINE_TRANSFORM_WEAK(
+                        image=img[y1:y2, x1:x2, :])
+
+            bbox_list, label_list, lw_list = [], [], []
+            for (bbox, label) in zip(results['gt_bboxes'],
+                                         results['gt_labels']):
+                x1, y1, x2, y2 = bbox
+                x1, y1 = max(0.0, x1), max(0.0, y1)
+                x2, y2 = min(float(img.shape[1]),
+                             x2), min(float(img.shape[0]), y2)
+                if x1 < x2 and y1 < y2:
+                    bbox_list.append([x1, y1, x2, y2])
+                    label_list.append(label)
+
+            if len(bbox_bkup)!=0:
+                assert len(bbox_list) > 0, 'Empty bbox after augment.'
+            results['gt_bboxes'] = np.array(bbox_list).astype(np.float32)
+            results['gt_labels'] = np.array(label_list).astype(np.long)
+            if len(bbox_list) == 0:
+                results['gt_bboxes'] = np.empty(shape=(0, 4)).astype(np.float32)
+                results['gt_labels'] = np.empty(shape=(0, )).astype(np.long)
+
+        except Exception as e:
+            if self.with_warning:
+                print('Error: ', e, ' Use non-augmented data.')
+            img = img_bkup
+            results['gt_bboxes'] = bbox_bkup
+            results['gt_bboxes_ignore'] = bbox_ignore_bkup
+
+        results['img'] = img.astype(dtype)
+        return results

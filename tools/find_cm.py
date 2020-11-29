@@ -78,7 +78,7 @@ def imshow_det_bboxes(img,
     return img
 
 
-workdir_path = 'laryngoscopy_output/faster_rcnn_r50_fpn_1x_laryngoscopy'
+workdir_path = 'laryngoscopy_output/faster_rcnn_r50_fpn_2x_clip-to-200_laryngoscopy'
 CLASSES = ('Carcinoma', 'PreCancer', 'Cyst', 'Pol&Nod', 'Normal')
 
 
@@ -221,11 +221,11 @@ for class_id, class_name in enumerate(CLASSES):
         area += (roc_cor[_ - 1][0] - roc_cor[_][0]
                  ) * roc_cor[_ - 1][1]
     roc_cor = np.array(roc_cor)
-    plt.xlabel('FP ratio')
-    plt.ylabel('TP ratio')
-    plt.title(f'{class_name}, AUC={round(area, 4)}')
-    plt.plot(roc_cor[:, 0], roc_cor[:, 1])
-    plt.show()
+    # plt.xlabel('FP ratio')
+    # plt.ylabel('TP ratio')
+    # plt.title(f'{class_name}, AUC={round(area, 4)}')
+    # plt.plot(roc_cor[:, 0], roc_cor[:, 1])
+    # plt.show()
 
 
 

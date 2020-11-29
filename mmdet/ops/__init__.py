@@ -2,15 +2,11 @@
 # could still use and import mmdet.ops.
 
 # yapf: disable
-from mmcv.ops import (ContextBlock, Conv2d, ConvTranspose2d, ConvWS2d,
-                      CornerPool, DeformConv, DeformConvPack, DeformRoIPooling,
-                      DeformRoIPoolingPack, GeneralizedAttention, Linear,
-                      MaskedConv2d, MaxPool2d, ModulatedDeformConv,
-                      ModulatedDeformConvPack, ModulatedDeformRoIPoolingPack,
-                      NonLocal2D, RoIAlign, RoIPool, SAConv2d,
+from mmcv.ops import (Conv2d, ConvTranspose2d, CornerPool, Linear,
+                      MaskedConv2d, MaxPool2d, RoIAlign, RoIPool, SAConv2d,
                       SigmoidFocalLoss, SimpleRoIAlign, batched_nms,
-                      build_plugin_layer, conv_ws_2d, deform_conv,
-                      deform_roi_pooling, get_compiler_version,
+                      deform_conv,
+                      get_compiler_version,
                       get_compiling_cuda_version, modulated_deform_conv, nms,
                       nms_match, point_sample, rel_roi_point_to_rel_img_point,
                       roi_align, roi_pool, sigmoid_focal_loss, soft_nms)

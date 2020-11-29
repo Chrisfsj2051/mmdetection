@@ -3,6 +3,14 @@ _base_ = [
     '../_base_/schedules/schedule_laryngoscopy.py',
     '../_base_/default_runtime.py'
 ]
+data_root = 'data/laryngoscopy/'
+
+fold_idx = 1
+
+# work_dir = f'./laryngoscopy_output/cascade_rcnn_r50_fpn_1x_laryngoscopy/fold1'
+# train_anns = data_root + f'medical_train_fold{fold_idx}.json'
+# test_anns = data_root + f'medical_test_fold{fold_idx}.json'
+
 model = dict(
     type='ATSS',
     pretrained='torchvision://resnet50',
@@ -24,7 +32,7 @@ model = dict(
         num_outs=5),
     bbox_head=dict(
         type='ATSSHead',
-        num_classes=5,
+        num_classes=4,
         in_channels=256,
         stacked_convs=4,
         feat_channels=256,
@@ -42,7 +50,7 @@ model = dict(
             type='FocalLoss',
             use_sigmoid=True,
             gamma=2.0,
-            alpha=0.25,
+            alpha=0.1,
             loss_weight=1.0),
         loss_bbox=dict(type='GIoULoss', loss_weight=2.0),
         loss_centerness=dict(
@@ -56,8 +64,26 @@ train_cfg = dict(
 test_cfg = dict(
     nms_pre=1000,
     min_bbox_size=0,
-    score_thr=0.05,
+    score_thr=0.00,
     nms=dict(type='nms', iou_threshold=0.6),
-    max_per_img=100)
+    max_per_img=1000)
 # optimizer
 optimizer = dict(type='SGD', lr=0.01, momentum=0.9, weight_decay=0.0001)
+
+
+data=dict(
+    workers_per_gpu=2,
+    samples_per_gpu=2,
+    train=dict(
+        ann_file=train_anns
+    ),
+    val=dict(
+        ann_file=test_anns,
+        save_roc_path = work_dir
+    ),
+    test=dict(
+        ann_file=test_anns
+    )
+)
+
+checkpoint_config = dict(interval=100)
