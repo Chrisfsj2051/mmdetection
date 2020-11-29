@@ -63,6 +63,8 @@ class Resize(object):
         ratio_range (tuple[float]): (min_ratio, max_ratio)
         keep_ratio (bool): Whether to keep the aspect ratio when resizing the
             image.
+        bbox_clip_border (bool, optional): Whether clip the objects outside
+            the border of the image. Defaults to True.
         backend (str): Image resize backend, choices are 'cv2' and 'pillow'.
             These two backends generates slightly different results. Defaults
             to 'cv2'.
@@ -73,6 +75,7 @@ class Resize(object):
                  multiscale_mode='range',
                  ratio_range=None,
                  keep_ratio=True,
+                 bbox_clip_border=True,
                  backend='cv2'):
         if img_scale is None:
             self.img_scale = None
@@ -94,6 +97,7 @@ class Resize(object):
         self.multiscale_mode = multiscale_mode
         self.ratio_range = ratio_range
         self.keep_ratio = keep_ratio
+        self.bbox_clip_border = bbox_clip_border
 
     @staticmethod
     def random_select(img_scales):
@@ -233,11 +237,12 @@ class Resize(object):
 
     def _resize_bboxes(self, results):
         """Resize bounding boxes with ``results['scale_factor']``."""
-        img_shape = results['img_shape']
         for key in results.get('bbox_fields', []):
             bboxes = results[key] * results['scale_factor']
-            bboxes[:, 0::2] = np.clip(bboxes[:, 0::2], 0, img_shape[1])
-            bboxes[:, 1::2] = np.clip(bboxes[:, 1::2], 0, img_shape[0])
+            if self.bbox_clip_border:
+                img_shape = results['img_shape']
+                bboxes[:, 0::2] = np.clip(bboxes[:, 0::2], 0, img_shape[1])
+                bboxes[:, 1::2] = np.clip(bboxes[:, 1::2], 0, img_shape[0])
             results[key] = bboxes
 
     def _resize_masks(self, results):
@@ -304,6 +309,7 @@ class Resize(object):
         repr_str += f'multiscale_mode={self.multiscale_mode}, '
         repr_str += f'ratio_range={self.ratio_range}, '
         repr_str += f'keep_ratio={self.keep_ratio})'
+        repr_str += f'bbox_clip_border={self.bbox_clip_border})'
         return repr_str
 
 
@@ -584,6 +590,8 @@ class RandomCrop(object):
         crop_size (tuple): Expected size after cropping, (h, w).
         allow_negative_crop (bool): Whether to allow a crop that does not
             contain any bbox area. Default to False.
+        bbox_clip_border (bool, optional): Whether clip the objects outside
+            the border of the image. Defaults to True.
 
     Note:
         - If the image is smaller than the crop size, return the original image
@@ -595,10 +603,14 @@ class RandomCrop(object):
           `allow_negative_crop` is set to False, skip this image.
     """
 
-    def __init__(self, crop_size, allow_negative_crop=False):
+    def __init__(self,
+                 crop_size,
+                 allow_negative_crop=False,
+                 bbox_clip_border=True):
         assert crop_size[0] > 0 and crop_size[1] > 0
         self.crop_size = crop_size
         self.allow_negative_crop = allow_negative_crop
+        self.bbox_clip_border = bbox_clip_border
         # The key correspondence from bboxes to labels and masks.
         self.bbox2label = {
             'gt_bboxes': 'gt_labels',
@@ -642,8 +654,9 @@ class RandomCrop(object):
             bbox_offset = np.array([offset_w, offset_h, offset_w, offset_h],
                                    dtype=np.float32)
             bboxes = results[key] - bbox_offset
-            bboxes[:, 0::2] = np.clip(bboxes[:, 0::2], 0, img_shape[1])
-            bboxes[:, 1::2] = np.clip(bboxes[:, 1::2], 0, img_shape[0])
+            if self.bbox_clip_border:
+                bboxes[:, 0::2] = np.clip(bboxes[:, 0::2], 0, img_shape[1])
+                bboxes[:, 1::2] = np.clip(bboxes[:, 1::2], 0, img_shape[0])
             valid_inds = (bboxes[:, 2] > bboxes[:, 0]) & (
                 bboxes[:, 3] > bboxes[:, 1])
             # If the crop does not contain any gt-bbox area and
@@ -671,7 +684,9 @@ class RandomCrop(object):
         return results
 
     def __repr__(self):
-        return self.__class__.__name__ + f'(crop_size={self.crop_size})'
+        repr_str = self.__class__.__name__ + f'(crop_size={self.crop_size}), '
+        repr_str += f'bbox_clip_border={self.bbox_clip_border})'
+        return repr_str
 
 
 @PIPELINES.register_module()
@@ -921,6 +936,8 @@ class MinIoURandomCrop(object):
         bounding boxes
         min_crop_size (float): minimum crop's size (i.e. h,w := a*h, a*w,
         where a >= min_crop_size).
+        bbox_clip_border (bool, optional): Whether clip the objects outside
+            the border of the image. Defaults to True.
 
     Note:
         The keys for bboxes, labels and masks should be paired. That is, \
@@ -928,11 +945,15 @@ class MinIoURandomCrop(object):
         `gt_bboxes_ignore` to `gt_labels_ignore` and `gt_masks_ignore`.
     """
 
-    def __init__(self, min_ious=(0.1, 0.3, 0.5, 0.7, 0.9), min_crop_size=0.3):
+    def __init__(self,
+                 min_ious=(0.1, 0.3, 0.5, 0.7, 0.9),
+                 min_crop_size=0.3,
+                 bbox_clip_border=True):
         # 1: return ori img
         self.min_ious = min_ious
         self.sample_mode = (1, *min_ious, 0)
         self.min_crop_size = min_crop_size
+        self.bbox_clip_border = bbox_clip_border
         self.bbox2label = {
             'gt_bboxes': 'gt_labels',
             'gt_bboxes_ignore': 'gt_labels_ignore'
@@ -1009,8 +1030,9 @@ class MinIoURandomCrop(object):
                         boxes = results[key].copy()
                         mask = is_center_of_bboxes_in_patch(boxes, patch)
                         boxes = boxes[mask]
-                        boxes[:, 2:] = boxes[:, 2:].clip(max=patch[2:])
-                        boxes[:, :2] = boxes[:, :2].clip(min=patch[:2])
+                        if self.bbox_clip_border:
+                            boxes[:, 2:] = boxes[:, 2:].clip(max=patch[2:])
+                            boxes[:, :2] = boxes[:, :2].clip(min=patch[:2])
                         boxes -= np.tile(patch[:2], 2)
 
                         results[key] = boxes
@@ -1038,7 +1060,8 @@ class MinIoURandomCrop(object):
     def __repr__(self):
         repr_str = self.__class__.__name__
         repr_str += f'(min_ious={self.min_ious}, '
-        repr_str += f'min_crop_size={self.min_crop_size})'
+        repr_str += f'min_crop_size={self.min_crop_size}), '
+        repr_str += f'bbox_clip_border={self.bbox_clip_border})'
         return repr_str
 
 
@@ -1235,7 +1258,10 @@ class Albu(object):
                 raise NotImplementedError(
                     'Albu only supports BitMap masks now')
             ori_masks = results['masks']
-            results['masks'] = results['masks'].masks
+            if albumentations.__version__ < '0.5':
+                results['masks'] = results['masks'].masks
+            else:
+                results['masks'] = [mask for mask in results['masks'].masks]
 
         results = self.aug(**results)
 
@@ -1365,6 +1391,8 @@ class RandomCenterCropPad(object):
             - 'logical_or': final_shape = input_shape | padding_shape_value
             - 'size_divisor': final_shape = int(
               ceil(input_shape / padding_shape_value) * padding_shape_value)
+        bbox_clip_border (bool, optional): Whether clip the objects outside
+            the border of the image. Defaults to True.
     """
 
     def __init__(self,
@@ -1375,7 +1403,8 @@ class RandomCenterCropPad(object):
                  std=None,
                  to_rgb=None,
                  test_mode=False,
-                 test_pad_mode=('logical_or', 127)):
+                 test_pad_mode=('logical_or', 127),
+                 bbox_clip_border=True):
         if test_mode:
             assert crop_size is None, 'crop_size must be None in test mode'
             assert ratios is None, 'ratios must be None in test mode'
@@ -1408,6 +1437,7 @@ class RandomCenterCropPad(object):
             self.std = std
         self.test_mode = test_mode
         self.test_pad_mode = test_pad_mode
+        self.bbox_clip_border = bbox_clip_border
 
     def _get_border(self, border, size):
         """Get final border for the target size.
@@ -1541,8 +1571,9 @@ class RandomCenterCropPad(object):
                     bboxes = results[key][mask]
                     bboxes[:, 0:4:2] += cropped_center_x - left_w - x0
                     bboxes[:, 1:4:2] += cropped_center_y - top_h - y0
-                    bboxes[:, 0:4:2] = np.clip(bboxes[:, 0:4:2], 0, new_w)
-                    bboxes[:, 1:4:2] = np.clip(bboxes[:, 1:4:2], 0, new_h)
+                    if self.bbox_clip_border:
+                        bboxes[:, 0:4:2] = np.clip(bboxes[:, 0:4:2], 0, new_w)
+                        bboxes[:, 1:4:2] = np.clip(bboxes[:, 1:4:2], 0, new_h)
                     keep = (bboxes[:, 2] > bboxes[:, 0]) & (
                         bboxes[:, 3] > bboxes[:, 1])
                     bboxes = bboxes[keep]
@@ -1616,7 +1647,8 @@ class RandomCenterCropPad(object):
         repr_str += f'std={self.input_std}, '
         repr_str += f'to_rgb={self.to_rgb}, '
         repr_str += f'test_mode={self.test_mode}, '
-        repr_str += f'test_pad_mode={self.test_pad_mode})'
+        repr_str += f'test_pad_mode={self.test_pad_mode}), '
+        repr_str += f'bbox_clip_border={self.bbox_clip_border})'
         return repr_str
 
 
