@@ -78,7 +78,7 @@ def imshow_det_bboxes(img,
     return img
 
 
-workdir_path = 'laryngoscopy_output/cascade_rcnn_r50_fro0_fpn_2x_laryngoscopy_augment'
+workdir_path = 'laryngoscopy_output/faster_rcnn_r50_fpn_2x_clip-to-60_laryngoscopy_augment'
 CLASSES = ('Carcinoma', 'PreCancer', 'Cyst', 'Pol&Nod', 'Normal')
 
 
@@ -120,40 +120,40 @@ for fold_idx in range(1, 6):
 
 correct, wrong = 0, 0
 
-for pred in pred_list:
-    print(f'correct={correct}, wrong={wrong}')
-    if pred['pred_label'] == pred['gt_label']:
-        correct += 1
-    else:
-        wrong += 1
-    img = cv2.imread(f'data/laryngoscopy/image/{pred["filename"]}')
-    if len(pred['gt_bbox']):
-        imshow_det_bboxes(
-            img,
-            pred['gt_bbox'],
-            np.array(pred['gt_label'])[None],
-            bbox_color='green',
-            text_color='green',
-            thickness=2,
-            font_scale=1.5,
-            class_names=CLASSES,
-            show=False,
-        )
-    if len(pred['pred_bbox']) and pred['pred_bbox'][4] > 0.3:
-        imshow_det_bboxes(
-            img,
-            pred['pred_bbox'][None][:, :5],
-            np.array(pred['pred_label'])[None],
-            bbox_color='blue',
-            text_color='blue',
-            thickness=2,
-            font_scale=1.5,
-            class_names=CLASSES,
-            show=False,
-        )
-    # img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-    # cv2.imwrite(f'./det_vis/{"correct" if pred["pred_label"] == pred["gt_label"] else "wrong"}/{pred["filename"]}', img)
-    cv2.imwrite(f'./det_vis/cascade_rcnn_r50_fro0_fpn_2x_laryngoscopy_augment/{pred["filename"]}', img)
+# for pred in pred_list:
+#     print(f'correct={correct}, wrong={wrong}')
+#     if pred['pred_label'] == pred['gt_label']:
+#         correct += 1
+#     else:
+#         wrong += 1
+#     img = cv2.imread(f'data/laryngoscopy/image/{pred["filename"]}')
+#     if len(pred['gt_bbox']):
+#         imshow_det_bboxes(
+#             img,
+#             pred['gt_bbox'],
+#             np.array(pred['gt_label'])[None],
+#             bbox_color='green',
+#             text_color='green',
+#             thickness=2,
+#             font_scale=1.5,
+#             class_names=CLASSES,
+#             show=False,
+#         )
+#     if len(pred['pred_bbox']) and pred['pred_bbox'][4] > 0.3:
+#         imshow_det_bboxes(
+#             img,
+#             pred['pred_bbox'][None][:, :5],
+#             np.array(pred['pred_label'])[None],
+#             bbox_color='blue',
+#             text_color='blue',
+#             thickness=2,
+#             font_scale=1.5,
+#             class_names=CLASSES,
+#             show=False,
+#         )
+#     # img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+#     # cv2.imwrite(f'./det_vis/{"correct" if pred["pred_label"] == pred["gt_label"] else "wrong"}/{pred["filename"]}', img)
+#     cv2.imwrite(f'./det_vis/cascade_rcnn_r50_fro0_fpn_2x_laryngoscopy_augment/{pred["filename"]}', img)
 
 for pred in pred_list:
     gt_label = pred['gt_label']

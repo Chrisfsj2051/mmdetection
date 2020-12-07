@@ -3,7 +3,9 @@ import os
 import re
 import numpy as np
 import matplotlib.pyplot as plt
+from torch.nn import BatchNorm1d
 
+BatchNorm1d
 # folder = 'configs/laryngoscopy/'
 #
 # for config_name in os.listdir(folder):
