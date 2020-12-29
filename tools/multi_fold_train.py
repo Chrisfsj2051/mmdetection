@@ -177,6 +177,7 @@ if __name__ == '__main__':
     args = parse_args()
     cfg = Config.fromfile(args.config)
     fold_idx = args.fold
+    assert 'fold1' in cfg.data.train['ann_file']
     train_path = cfg.data.train['ann_file'].replace('fold1', f'fold{fold_idx}')
     test_path = cfg.data.test['ann_file'].replace('fold1', f'fold{fold_idx}')
     if 'dataset' in cfg.data['train'].keys():

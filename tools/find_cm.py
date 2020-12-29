@@ -80,7 +80,9 @@ def imshow_det_bboxes(img,
 
 # workdir_path = 'laryngoscopy_output/faster_rcnn_r50_fpn_2x_100image_laryngoscopy'
 # workdir_path = 'laryngoscopy_output/faster_rcnn_r50_fpn_2x_100image_laryngoscopy_augment'
-workdir_path = 'laryngoscopy_output/faster_rcnn_r50_fro0_fpn_2x_100image_laryngoscopy'
+# workdir_path = 'laryngoscopy_output/faster_rcnn_r50_fro0_fpn_2x_100image_laryngoscopy'
+workdir_path = 'laryngoscopy_output/faster_rcnn_r50_fro0_fpn_3x_100image_laryngoscopy'
+# workdir_path = 'laryngoscopy_output/faster_rcnn_r50_fro-1_fpn_2x_100image_laryngoscopy'
 
 CLASSES = ('Carcinoma', 'PreCancer', 'Cyst', 'Pol&Nod', 'Normal')
 
@@ -163,8 +165,8 @@ correct, wrong = 0, 0
 #             show=False,
 #         )
 #     # img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-#     # cv2.imwrite(f'./det_vis/{"correct" if pred["pred_label"] == pred["gt_label"] else "wrong"}/{pred["filename"]}', img)
-#     cv2.imwrite(f'./det_vis/cascade_rcnn_r50_fro0_fpn_2x_laryngoscopy_augment/{pred["filename"]}', img)
+#     file_path = f'det_vis/{"correct" if pred["pred_label"] == pred["gt_label"] else "wrong"}/{pred["filename"]}'
+#     cv2.imwrite(file_path, img)
 
 for pred in pred_list:
     gt_label = pred['gt_label']
@@ -198,7 +200,7 @@ print('*' * star_num)
 for idx in range(6):
     print('| %5s | %-20s | %10s | %7s | %9s |' % (
         f'top-{1}',
-        (CLASSES + ('Average', ))[idx],
+        (CLASSES + ('Average',))[idx],
         '%.2f %%' % (eval_res['precision'][idx] * 100),
         '%.2f %%' % (eval_res['recall'][idx] * 100),
         '%.2f %%' % (eval_res['specific'][idx] * 100),
@@ -210,9 +212,21 @@ plt.figure(figsize=(10, 10))
 plot_confusion_matrix(cm.astype(np.int), CLASSES)
 plt.show()
 
+# for class_id, class_name in enumerate(CLASSES):
+#     score_list = [pred['score'][class_id] for pred in pred_list]
+#     for pred_res in pred_list:
+#         cls_score = pred_res['score'][class_id]
+#         if sum([score == cls_score for score in score_list]) > 1:
+#             pred_res['score'][class_id] += np.random.randn() / 1e7
+
+for pred_res in pred_list:
+    for i in range(5):
+        pred_res['score'][i] += np.random.randn() / 1e7
+
 for class_id, class_name in enumerate(CLASSES):
     score_list = [pred['score'][class_id] for pred in pred_list]
     score_list = sorted(score_list)
+    assert len(score_list) == len(set(score_list))
     roc_cor = []
     for thr in score_list:
         TP, FP, FN, TN = 0, 0, 0, 0
