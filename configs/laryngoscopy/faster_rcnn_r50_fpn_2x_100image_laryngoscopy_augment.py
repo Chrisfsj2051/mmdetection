@@ -21,5 +21,5 @@ train_pipeline = [
 
 data = dict(
     train=dict(pipeline=train_pipeline, ),
-    val=dict(save_roc_path=work_dir),
+    val=dict(save_roc_path=work_dir)
 )

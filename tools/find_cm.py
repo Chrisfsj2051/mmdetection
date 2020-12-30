@@ -81,8 +81,9 @@ def imshow_det_bboxes(img,
 # workdir_path = 'laryngoscopy_output/faster_rcnn_r50_fpn_2x_100image_laryngoscopy'
 # workdir_path = 'laryngoscopy_output/faster_rcnn_r50_fpn_2x_100image_laryngoscopy_augment'
 # workdir_path = 'laryngoscopy_output/faster_rcnn_r50_fro0_fpn_2x_100image_laryngoscopy'
-workdir_path = 'laryngoscopy_output/faster_rcnn_r50_fro0_fpn_3x_100image_laryngoscopy'
 # workdir_path = 'laryngoscopy_output/faster_rcnn_r50_fro-1_fpn_2x_100image_laryngoscopy'
+
+workdir_path = 'laryngoscopy_output/faster_rcnn_r50_fro0_fpn_3x_100image_laryngoscopy'
 
 CLASSES = ('Carcinoma', 'PreCancer', 'Cyst', 'Pol&Nod', 'Normal')
 

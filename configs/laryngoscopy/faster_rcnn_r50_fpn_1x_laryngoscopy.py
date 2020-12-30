@@ -6,6 +6,13 @@ _base_ = [
 ]
 data_root = 'data/laryngoscopy/'
 
+log_config = dict(
+    interval=20,
+    hooks=[
+        dict(type='TextLoggerHook'),
+        # dict(type='TensorboardLoggerHook')
+    ])
+
 fold_idx = 1
 
 work_dir = f'./laryngoscopy_output/faster_rcnn_r50_fpn_1x_laryngoscopy/fold{fold_idx}'
