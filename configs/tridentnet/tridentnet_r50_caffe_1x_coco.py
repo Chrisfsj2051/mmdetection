@@ -11,8 +11,8 @@ model = dict(
         type='TridentResNet',
         trident_dilations=(1, 2, 3),
         num_branch=3,
-        test_branch_idx=1),
-    roi_head=dict(type='TridentRoIHead', num_branch=3, test_branch_idx=1))
+        test_branch_idx=-1),
+    roi_head=dict(type='TridentRoIHead', num_branch=3, test_branch_idx=-1))
 
 train_cfg = dict(
     rpn_proposal=dict(nms_post=500, max_num=500),

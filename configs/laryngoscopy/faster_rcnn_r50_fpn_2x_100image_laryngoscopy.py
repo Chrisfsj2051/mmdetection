@@ -7,6 +7,16 @@ data_root = 'data/laryngoscopy/'
 train_anns = data_root + f'100image_train_fold{fold_idx}.json'
 test_anns = data_root + f'100image_test_fold{fold_idx}.json'
 
+model = dict(
+    rpn_head=dict(
+        anchor_generator=dict(
+            type='AnchorGenerator',
+            scales=[4],
+            ratios=[0.5, 1.0, 2.0],
+            strides=[4, 8, 16, 32, 64])
+    )
+)
+
 data = dict(
     samples_per_gpu=2,
     train=dict(normal_thr=0.05, class_equal=True, ann_file=train_anns),
