@@ -209,7 +209,7 @@ class TileDefectDataset(CustomDataset):
 
     def format_results(self, results, out_path='submit.json',
                        neg_num=60, **kwargs):
-        mmcv.dump(results, 'for_debug.pkl')
+        # mmcv.dump(results, 'for_debug.pkl')
         results, filename_list = self.merge_results(results)
         max_scores = [np.concatenate(res) for res in results]
         max_scores = [np.max(score[:, -1]) if len(score) else 0.0
